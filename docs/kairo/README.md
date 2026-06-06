@@ -1,0 +1,1 @@
+Coloca aquí Kairo_Model_Card_Preconstruccion.docx

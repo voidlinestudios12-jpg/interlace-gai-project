@@ -1,0 +1,29 @@
+# Cache y entornos de Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+.ipynb_checkpoints/
+
+# Datos y pesos (van a Drive/Kaggle, no a git)
+data/*
+checkpoints/*
+!data/.gitkeep
+!checkpoints/.gitkeep
+*.ckpt
+*.pt
+*.pth
+*.safetensors
+*.bin
+*.gguf
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Secretos (NUNCA subir)
+.env
+*.key
+kaggle.json

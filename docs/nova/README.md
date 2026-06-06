@@ -1,0 +1,1 @@
+Coloca aquí Nova_Model_Card_Preconstruccion.docx
