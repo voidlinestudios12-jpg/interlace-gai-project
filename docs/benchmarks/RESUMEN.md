@@ -18,3 +18,23 @@ Generación con la configuración oficial de DeepSeek-R1: `temperature=0.6`, `to
 
 - **Truncados:** problemas en los que el modelo de 1.5B entró en un bucle de repetición y agotó el tope de tokens. Se rehicieron con un tope ampliado (32 768 → 65 536); el truncado restante en cada benchmark es un bucle infinito irrecuperable a cualquier tope (limitación del modelo, no de la evaluación).
 - **AIME** se evalúa con una sola muestra por problema sobre 30 problemas, por lo que su porcentaje tiene una varianza alta (la referencia oficial ~28,9 % es un promedio de 64 muestras).
+
+---
+
+## Fase 1 — cómputo en inferencia (TTC)
+
+Sin entrenar nada: para cada problema se generan **N** soluciones (mismo modelo, temp 0.6 / top_p 0.95)
+y se elige la respuesta final con un selector (mayoría / auto-certeza / verificador). Mide cómo sube
+la precisión al aumentar N. Detalle, curvas y datos en [`fase1_ttc/`](fase1_ttc/).
+
+**Mejora (N=1 vs mejor N), mismo arnés:**
+
+| Benchmark | N=1 (base) | Mejor con N alto | Mejora |
+|--------------|:-:|:-:|:-:|
+| AIME 2024 (30) | 23,3 % | **63,3 %** (N=32) | **+40,0** |
+| GPQA-Diamond (198) | 33,8 % | **43,4 %** (N=32) | +9,6 |
+| GSM8K (250) | 87,2 % | **92,8 %** (N=4) | +5,6 |
+
+- El mejor selector a N intermedio es **auto-certeza** (en AIME: 37 % vs 27 % en N=4; 60 % vs 53 % en N=16).
+- Gráficas: `fase1_ttc/precision_vs_n_{aime,gpqa,gsm8k}.png`. Tablas completas: `fase1_ttc/RESUMEN_ttc.md`.
+- **Conclusión:** el cómputo en inferencia amplifica al modelo base donde hay margen (AIME, GPQA) sin tocar los pesos.
