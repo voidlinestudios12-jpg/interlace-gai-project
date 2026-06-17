@@ -1,0 +1,18 @@
+First, we calculate the total number of eggs laid by Janet's ducks each day, which is 16.
+
+Next, we determine the number of eggs Janet consumes daily. She eats 3 eggs for breakfast every morning and 4 eggs for baking muffins, totaling:
+\[
+3 + 4 = 7 \text{ eggs}
+\]
+
+We then subtract the number of consumed eggs from the total number of eggs laid to find the remaining eggs:
+\[
+16 - 7 = 9 \text{ eggs}
+\]
+
+Janet sells the remaining 9 eggs at $2 per egg. Therefore, the total revenue from selling the eggs at the farmers' market is:
+\[
+9 \times 2 = 18 \text{ dollars}
+\]
+
+Thus, Janet makes \boxed{18} dollars every day at the farmers' market.

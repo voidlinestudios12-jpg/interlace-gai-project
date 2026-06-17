@@ -38,3 +38,14 @@ la precisión al aumentar N. Detalle, curvas y datos en [`fase1_ttc/`](fase1_ttc
 - El mejor selector a N intermedio es **auto-certeza** (en AIME: 37 % vs 27 % en N=4; 60 % vs 53 % en N=16).
 - Gráficas: `fase1_ttc/precision_vs_n_{aime,gpqa,gsm8k}.png`. Tablas completas: `fase1_ttc/RESUMEN_ttc.md`.
 - **Conclusión:** el cómputo en inferencia amplifica al modelo base donde hay margen (AIME, GPQA) sin tocar los pesos.
+
+---
+
+## Fase 2 — SFT de siembra: INTENTADA y REVERTIDA
+
+Se entrenó un adaptador QLoRA (Light-R1, 1.000 trazas) → **empeoró** el modelo (AIME 63%→17%, GSM8K 93%→86%).
+Por el principio "nunca romper la base" → **revertido. Nova = v0.** Causa y evidencia en
+[`leccion_fase2/`](leccion_fase2/): choque de formato `<think>` (la plantilla lo añade y las trazas también)
++ lr/épocas agresivos → el modelo perdió su razonamiento profundo. El adaptador quedó archivado (no se usa).
+
+**Nova-v0 (Fase 1) sigue siendo el resultado sólido del proyecto.**
