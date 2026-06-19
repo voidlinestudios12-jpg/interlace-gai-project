@@ -9,8 +9,10 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-RES = "C:/Users/aleja/Desktop/_bench_work/resultados"
-OUT = "C:/Users/aleja/Desktop/_bench_work/repo/docs/benchmarks/fase3_prm"
+import pathlib
+_repo = pathlib.Path(__file__).resolve().parent
+RES = str(_repo.parent / "resultados")
+OUT = str(_repo / "docs/benchmarks/fase3_prm")
 SWEEP = [8, 16, 32, 64, 128]
 
 
