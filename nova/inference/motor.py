@@ -36,13 +36,28 @@ def seleccionar(benchmark: str, muestras, metodo: str) -> str:
     """Devuelve la respuesta final (string) elegida entre las muestras.
 
     Metodos:
-      - mayoria         : voto simple (1 por muestra).
-      - autocerteza     : voto ponderado por la confianza del modelo (exp(media logprob)).
-      - verificador     : voto simple SOLO entre muestras que pasan el verificador de tierra.
-      - autoverificacion: voto ponderado por la puntuacion de autoverificacion (v_score:
-                          el PROPIO modelo juzgo si la solucion es correcta). Si nadie fue
-                          aprobado (todas v_score=0), cae a mayoria.
+      - mayoria              : voto simple (1 por muestra).
+      - autocerteza          : voto ponderado por la confianza del modelo (exp(media logprob)).
+      - verificador          : voto simple SOLO entre muestras que pasan el verificador de tierra.
+      - autoverificacion     : voto ponderado por la puntuacion de autoverificacion (v_score:
+                               el PROPIO modelo crudo juzgo si la solucion es correcta).
+      - verificador_prm      : best-of-N por la puntuacion del verificador ENTRENADO (prm_score):
+                               elige la solucion mejor puntuada. Esta pensado para RESCATAR la
+                               respuesta correcta cuando es minoritaria (la mayoria fallaria).
+      - verificador_prm_pesado: voto PONDERADO por la puntuacion del verificador entrenado
+                               (mas robusto al ruido del verificador que el best-of-N puro).
+
+    Para los dos ultimos cada muestra debe traer 'prm_score' (lo calcula el verificador
+    entrenado en el momento de medir; nunca usa el gold). Si nadie acumulo peso, cae a mayoria.
     """
+    # best-of-N por verificador entrenado: no es un voto, es argmax de la puntuacion.
+    if metodo == "verificador_prm":
+        validas = [m for m in muestras if V.normalizar(benchmark, m.get("respuesta", "")) != ""]
+        if not validas:
+            return ""
+        mejor = max(validas, key=lambda m: m.get("prm_score", float("-inf")))
+        return mejor["respuesta"]
+
     if metodo == "mayoria":
         candidatas = muestras
 
@@ -63,6 +78,11 @@ def seleccionar(benchmark: str, muestras, metodo: str) -> str:
 
         def peso(m):
             return float(m.get("v_score", 0.0))
+    elif metodo == "verificador_prm_pesado":
+        candidatas = muestras
+
+        def peso(m):
+            return float(m.get("prm_score", 0.0))
     else:
         raise ValueError(f"metodo desconocido: {metodo}")
 

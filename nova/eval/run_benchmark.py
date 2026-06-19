@@ -22,15 +22,16 @@ Las funciones de extracción son importables sin dependencias pesadas:
 """
 
 # ============================== CONFIGURACIÓN ===============================
+import os  # arriba para poder leer BENCHMARK y N desde variables de entorno
 
-BENCHMARK = "gsm8k"   # opciones: "gsm8k", "aime", "gpqa"
-N = 1000              # nº de problemas a evaluar (para pruebas, ponerlo en 3)
+BENCHMARK = os.environ.get("BENCHMARK", "gsm8k")   # "gsm8k", "aime", "gpqa"
+N = int(os.environ.get("N", "1000"))               # nº de problemas a evaluar
 
 MODEL_ID = "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
 TEMPERATURE = 0.6         # recomendación oficial de DeepSeek-R1
 TOP_P = 0.95
-MAX_NEW_TOKENS = 32768    # tope por llamada a generate()
-MAX_TOTAL_TOKENS = 49152  # tope total sumando las continuaciones anti-truncamiento
+MAX_NEW_TOKENS = 4096     # ARREGLADO: antes 32768 -> causaba CUDA out-of-memory y horas/problema en T4
+MAX_TOTAL_TOKENS = 4096   # ARREGLADO: antes 49152 -> sin continuaciones gigantes que revientan los 15GB
 
 RESULTS_FILE = f"results_{BENCHMARK}.jsonl"
 REPORT_FILE = f"report_{BENCHMARK}.md"
@@ -47,6 +48,9 @@ import random
 import re
 import sys
 import time
+
+# Evita la fragmentación de memoria de la GPU (recomendado por PyTorch).
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 
 
 # ===================== EXTRACCIÓN DE RESPUESTAS (importable) ================
