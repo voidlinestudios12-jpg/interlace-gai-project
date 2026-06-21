@@ -6,6 +6,7 @@ Fecha: 2026-06-21. Escrito al cambiar de ordenador. **Léeme primero para contin
 - **Código:** este repo GitHub (privado). Incluye el pipeline del verificador en `nova/forge/preparar_datos_verificador.py` (pasos `preparar`/`generar`/`filtrar`, fuentes `math` y `numina`, modo `--spawn`), entreno `nova/forge/sft_verificador.py`, medición `nova/inference/run_verif_eval_modal.py`.
 - **Datos/artefactos:** volumen **Modal `nova-data`** (cuenta `voidlinestudios12`). Es nube: accesible desde cualquier PC con el token de Modal. **No se pierde nada al cambiar de ordenador.**
 - **Pesos futuros:** Hugging Face privado (cuenta `InterlaceAI`).
+- **Backup de datos en HF:** dataset privado **`InterlaceAI/nova-verif-data`** (copia de `verif_dataset_v1.jsonl`, `verif_dataset_numina.jsonl` (184/600), listas de problemas y metas). Independiente de Modal; sirve para que Kaggle tire los problemas desde HF.
 
 ## Estado de la Fase 3 (verificador ORM)
 - **v1 LISTO:** `verif_dataset_v1.jsonl` = 3200 soluciones / 400 problemas MATH (niveles 3-5). 79% correctas, 141 problemas "mixtos".
@@ -34,7 +35,7 @@ Fecha: 2026-06-21. Escrito al cambiar de ordenador. **Léeme primero para contin
 
 ## Alternativa Kaggle (si Modal sigue capado)
 `nova/eval/run_benchmark.py` ya es self-contained para Kaggle (carga el modelo con transformers, extractores `extraer_num`/`comparar_num`). Plan para generar datos del verificador en Kaggle T4:
-1. Subir `verif_problemas_numina.jsonl` a un dataset de Kaggle o a HF (privado).
+1. `verif_problemas_numina.jsonl` ya está en HF (`InterlaceAI/nova-verif-data`): descargarlo desde ahí en el notebook.
 2. Notebook: cargar DeepSeek-R1-Distill-Qwen-1.5B (vLLM o transformers), generar K=8 por problema (temp 0.6/top_p 0.95), etiquetar con el gold, guardar jsonl.
 3. Subir el jsonl resultante a HF/Modal y seguir desde el paso `filtrar`.
 
