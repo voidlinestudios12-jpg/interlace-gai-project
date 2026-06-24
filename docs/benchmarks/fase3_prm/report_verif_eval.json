@@ -1,0 +1,82 @@
+{
+  "mayoria_N8": {
+    "correct": 30,
+    "total": 90
+  },
+  "mayoria_N16": {
+    "correct": 32,
+    "total": 90
+  },
+  "mayoria_N32": {
+    "correct": 32,
+    "total": 90
+  },
+  "mayoria_N64": {
+    "correct": 33,
+    "total": 90
+  },
+  "autocerteza_N8": {
+    "correct": 21,
+    "total": 90
+  },
+  "autocerteza_N16": {
+    "correct": 20,
+    "total": 90
+  },
+  "autocerteza_N32": {
+    "correct": 17,
+    "total": 90
+  },
+  "autocerteza_N64": {
+    "correct": 18,
+    "total": 90
+  },
+  "verificador_prm_N8": {
+    "correct": 33,
+    "total": 90
+  },
+  "verificador_prm_N16": {
+    "correct": 34,
+    "total": 90
+  },
+  "verificador_prm_N32": {
+    "correct": 39,
+    "total": 90
+  },
+  "verificador_prm_N64": {
+    "correct": 34,
+    "total": 90
+  },
+  "verificador_prm_pesado_N8": {
+    "correct": 37,
+    "total": 90
+  },
+  "verificador_prm_pesado_N16": {
+    "correct": 41,
+    "total": 90
+  },
+  "verificador_prm_pesado_N32": {
+    "correct": 47,
+    "total": 90
+  },
+  "verificador_prm_pesado_N64": {
+    "correct": 47,
+    "total": 90
+  },
+  "oracle_N8": {
+    "correct": 43,
+    "total": 90
+  },
+  "oracle_N16": {
+    "correct": 49,
+    "total": 90
+  },
+  "oracle_N32": {
+    "correct": 54,
+    "total": 90
+  },
+  "oracle_N64": {
+    "correct": 54,
+    "total": 90
+  }
+}
