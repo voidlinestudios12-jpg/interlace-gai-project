@@ -130,7 +130,7 @@ def puntuar_lote(rows):
 print("[SCORE] puntuando soluciones con ORM...", flush=True)
 # Puntuar todas las soluciones de una vez en lotes
 prm_scores = {}  # (idx, sol_idx) -> prob
-all_rows = [(r["idx"], r.get("sol_idx", i), r) for r in filas]
+all_rows = [(r["idx"], r.get("sol_idx", idx), r) for idx, r in enumerate(filas)]
 # Recalcular sol_idx si no está
 sol_idx_counters = defaultdict(int)
 indexed_rows = []
