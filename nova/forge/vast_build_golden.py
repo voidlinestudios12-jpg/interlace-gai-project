@@ -189,7 +189,7 @@ if not cand_por_idx:
 # --------------------------------------------------------------------------
 print("[GOLD] cargando verificador ORM...", flush=True)
 import torch
-from transformers import AutoModelForSequenceClassification, AutoTokenizer, BitsAndBytesConfig
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
 from peft import PeftModel
 
 verif_dir = snapshot_download(HF_REPO_MODEL, repo_type="model", token=TOKEN,
@@ -198,10 +198,9 @@ MAX_LEN = 2048
 vtok = AutoTokenizer.from_pretrained(verif_dir)
 if vtok.pad_token is None:
     vtok.pad_token = vtok.eos_token
-bnb = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4",
-                         bnb_4bit_compute_dtype=torch.bfloat16, bnb_4bit_use_double_quant=True)
+# bf16 (sin 4-bit): el modelo es 1.5B, cabe de sobra en 24GB y evita bitsandbytes
 vmodel = AutoModelForSequenceClassification.from_pretrained(
-    BASE_ID, num_labels=2, quantization_config=bnb, dtype=torch.bfloat16, device_map={"": 0})
+    BASE_ID, num_labels=2, dtype=torch.bfloat16, device_map={"": 0})
 vmodel.config.pad_token_id = vtok.pad_token_id
 vmodel = PeftModel.from_pretrained(vmodel, verif_dir)
 vmodel.eval()

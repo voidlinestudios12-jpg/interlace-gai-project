@@ -58,9 +58,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import Dataset
-from transformers import (AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig,
+from transformers import (AutoModelForCausalLM, AutoTokenizer,
                           Trainer, TrainingArguments)
-from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
+from peft import LoraConfig, get_peft_model
 
 tok = AutoTokenizer.from_pretrained(BASE_ID)
 if tok.pad_token is None:
@@ -129,18 +129,20 @@ def collate(batch):
 
 
 # --------------------------------------------------------------------------
-# Modelo: base 4-bit congelada + LoRA
+# Modelo: base bf16 CONGELADA + LoRA (1.5B cabe en 24GB; sin 4-bit/bitsandbytes)
 # --------------------------------------------------------------------------
-bnb = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4",
-                         bnb_4bit_compute_dtype=torch.bfloat16, bnb_4bit_use_double_quant=True)
 model = AutoModelForCausalLM.from_pretrained(
-    BASE_ID, quantization_config=bnb, dtype=torch.bfloat16, trust_remote_code=True, device_map={"": 0})
-model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
+    BASE_ID, dtype=torch.bfloat16, trust_remote_code=True, device_map={"": 0})
+model.config.use_cache = False
+# Congelar la base explícitamente (solo se entrenará LoRA)
+for p in model.parameters():
+    p.requires_grad_(False)
+# Necesario para gradient checkpointing + LoRA sobre modelo no cuantizado
+model.enable_input_require_grads()
 lora = LoraConfig(r=LORA_R, lora_alpha=2 * LORA_R, lora_dropout=0.05, bias="none",
                   task_type="CAUSAL_LM",
                   target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"])
 model = get_peft_model(model, lora)
-model.config.use_cache = False
 model.print_trainable_parameters()
 
 # Día 0 ≡ base
@@ -200,7 +202,7 @@ args = TrainingArguments(
     per_device_train_batch_size=1, gradient_accumulation_steps=GRAD_ACCUM,
     learning_rate=LR, warmup_ratio=0.03, lr_scheduler_type="cosine",
     logging_steps=10, save_strategy="no", bf16=True, report_to="none",
-    optim="paged_adamw_8bit", gradient_checkpointing=True,
+    optim="adamw_torch", gradient_checkpointing=True,
     gradient_checkpointing_kwargs={"use_reentrant": False},
     remove_unused_columns=False, seed=SEED, dataloader_num_workers=2)
 
@@ -209,7 +211,7 @@ trainer = RFTTrainer(model=model, args=args, train_dataset=DS(ejemplos), data_co
 print(f"\n[RFT] ===== CONFIG ENTRENAMIENTO =====", flush=True)
 print(f"[RFT] dataset dorado: {len(ejemplos)} ejemplos | epochs={EPOCHS} lr={LR} "
       f"beta_kl={BETA_KL} r={LORA_R} max_seq={MAX_SEQ} grad_accum={GRAD_ACCUM}", flush=True)
-print(f"[RFT] base CONGELADA (4-bit) + LoRA | optim=paged_adamw_8bit bf16", flush=True)
+print(f"[RFT] base CONGELADA (bf16) + LoRA | optim=adamw_torch", flush=True)
 
 stats = trainer.train()
 loss = float(getattr(stats, "training_loss", 0.0))
