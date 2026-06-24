@@ -134,7 +134,7 @@ def collate(batch):
 bnb = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4",
                          bnb_4bit_compute_dtype=torch.bfloat16, bnb_4bit_use_double_quant=True)
 model = AutoModelForCausalLM.from_pretrained(
-    BASE_ID, quantization_config=bnb, dtype=torch.bfloat16, trust_remote_code=True)
+    BASE_ID, quantization_config=bnb, dtype=torch.bfloat16, trust_remote_code=True, device_map={"": 0})
 model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
 lora = LoraConfig(r=LORA_R, lora_alpha=2 * LORA_R, lora_dropout=0.05, bias="none",
                   task_type="CAUSAL_LM",
