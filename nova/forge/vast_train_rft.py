@@ -55,6 +55,11 @@ filas = [json.loads(l) for l in open(gold_path, encoding="utf-8") if l.strip()]
 print(f"[RFT] {len(filas)} problemas dorados cargados", flush=True)
 
 import torch
+# H100: el backend cuDNN de SDPA falla ("No valid execution plans built"); usar flash/mem-efficient
+try:
+    torch.backends.cuda.enable_cudnn_sdp(False)
+except Exception:
+    pass
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import Dataset

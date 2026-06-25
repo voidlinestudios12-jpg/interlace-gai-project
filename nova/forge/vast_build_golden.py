@@ -189,6 +189,11 @@ if not cand_por_idx:
 # --------------------------------------------------------------------------
 print("[GOLD] cargando verificador ORM...", flush=True)
 import torch
+# H100: el backend cuDNN de SDPA falla ("No valid execution plans built"); usar flash/mem-efficient
+try:
+    torch.backends.cuda.enable_cudnn_sdp(False)
+except Exception:
+    pass
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 from peft import PeftModel
 
