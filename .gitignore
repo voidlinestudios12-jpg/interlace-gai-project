@@ -28,3 +28,7 @@ Thumbs.db
 *.key
 kaggle.json
 docs/benchmarks/fase3_prm/aime_gen.jsonl
+
+# Privado / interno (no publicar): instrucciones internas y handoffs con nombres de cuentas
+CLAUDE.md
+docs/benchmarks/fase3_prm/ESTADO_Y_RETOMAR.md
