@@ -35,7 +35,7 @@ BASE_ID = "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Límites de calidad
-MAX_LEN_CHARS = 24000   # ~7000 tokens; descarta trazas gigantes
+MAX_LEN_CHARS = int(os.environ.get("RFT_MAX_LEN_CHARS", "34000"))   # ~10k tokens; incluye trazas largas (problemas difíciles)
 MIN_LEN_CHARS = 200     # descarta soluciones triviales/vacías
 DECON_UMBRAL = 0.6
 
@@ -250,24 +250,52 @@ for b in range(0, len(flat), SCORE_BATCH):
 
 
 # --------------------------------------------------------------------------
-# 4) Elegir la mejor candidata por problema y escribir el dataset dorado
+# 4) Elegir candidatas PESANDO hacia problemas DIFÍCILES (correcta-en-minoría).
+#    La señal del RFT está donde la correcta es minoría: ahí su prob a N=1 es
+#    baja y hay margen para subirla. Los fáciles (correcta-en-mayoría) son peso
+#    muerto. Por eso: hard -> oversample (top-2), medio -> 1, fácil -> se descarta.
 # --------------------------------------------------------------------------
 SUFIJO = "\n\nPlease reason step by step, and put your final answer within \\boxed{}."
-dorado = []
-for idx, cands in cand_por_idx.items():
-    mejor = max(cands, key=lambda s: s.get("prm_score", 0.0))
-    dorado.append({
-        "idx": idx,
-        "problema": mejor["problema"],
-        "gold": mejor.get("gold"),
-        "fuente": mejor.get("fuente"),
-        "solucion": mejor["texto"],
-        "prm_score": mejor.get("prm_score", 0.0),
-        "n_candidatas": len(cands),
-    })
+GOLD_FILE = os.environ.get("RFT_GOLD_FILE", "rft_dorado_v1.jsonl")
+# Umbrales por fracción de muestras correctas (sobre las ~8 generadas por problema)
+HARD_MAX = float(os.environ.get("RFT_HARD_MAX", "0.375"))   # <=3/8 correctas = difícil
+EASY_MIN = float(os.environ.get("RFT_EASY_MIN", "0.75"))    # >6/8 correctas = fácil (descartar)
+N_HARD = int(os.environ.get("RFT_N_HARD", "2"))             # cuántas soluciones por problema difícil
 
-dorado.sort(key=lambda r: r["idx"])
-out_path = os.path.join(WORK, "rft_dorado_v1.jsonl")
+
+def frac_correcta(idx):
+    sols = por_idx.get(idx, [])
+    if not sols:
+        return 1.0
+    return sum(1 for s in sols if s.get("etiqueta", 0) == 1) / len(sols)
+
+
+dorado = []
+n_hard = n_med = n_easy_drop = 0
+for idx, cands in cand_por_idx.items():
+    frac = frac_correcta(idx)
+    cands_ord = sorted(cands, key=lambda s: s.get("prm_score", 0.0), reverse=True)
+    if frac <= HARD_MAX:
+        elegidas = cands_ord[:N_HARD]   # oversample: hasta N_HARD mejores
+        dificultad = "hard"
+        n_hard += 1
+    elif frac >= EASY_MIN:
+        n_easy_drop += 1
+        continue                         # fácil = peso muerto -> descartar
+    else:
+        elegidas = cands_ord[:1]
+        dificultad = "medio"
+        n_med += 1
+    for sol in elegidas:
+        dorado.append({
+            "idx": idx, "problema": sol["problema"], "gold": sol.get("gold"),
+            "fuente": sol.get("fuente"), "solucion": sol["texto"],
+            "prm_score": sol.get("prm_score", 0.0), "frac_correcta": round(frac, 3),
+            "dificultad": dificultad, "n_candidatas": len(cands),
+        })
+
+dorado.sort(key=lambda r: (r["idx"], -r["prm_score"]))
+out_path = os.path.join(WORK, GOLD_FILE)
 with open(out_path, "w", encoding="utf-8") as f:
     for r in dorado:
         f.write(json.dumps(r, ensure_ascii=False) + "\n")
@@ -276,25 +304,28 @@ with open(out_path, "w", encoding="utf-8") as f:
 scores = [r["prm_score"] for r in dorado]
 longs = [len(r["solucion"]) for r in dorado]
 por_fuente = Counter(r.get("fuente") for r in dorado)
-print(f"\n[GOLD] === DATASET DORADO ===", flush=True)
-print(f"[GOLD] problemas: {len(dorado)}", flush=True)
+por_dif = Counter(r.get("dificultad") for r in dorado)
+print(f"\n[GOLD] === DATASET DORADO ({GOLD_FILE}) ===", flush=True)
+print(f"[GOLD] ejemplos: {len(dorado)} | problemas hard={n_hard} medio={n_med} | faciles descartados={n_easy_drop}", flush=True)
+print(f"[GOLD] ejemplos por dificultad: {dict(por_dif)}", flush=True)
 print(f"[GOLD] prm_score medio: {sum(scores)/len(scores):.3f} (min {min(scores):.3f} max {max(scores):.3f})", flush=True)
 print(f"[GOLD] longitud media: {sum(longs)//len(longs)} chars (min {min(longs)} max {max(longs)})", flush=True)
 print(f"[GOLD] por fuente: {dict(por_fuente)}", flush=True)
 
 # Subir a HF
 try:
-    api.upload_file(path_or_fileobj=out_path, path_in_repo="rft_dorado_v1.jsonl",
+    api.upload_file(path_or_fileobj=out_path, path_in_repo=GOLD_FILE,
                     repo_id=HF_REPO_DATA, repo_type="dataset",
-                    commit_message=f"rft dorado v1: {len(dorado)} problemas")
-    print(f"[GOLD] subido rft_dorado_v1.jsonl a HF", flush=True)
+                    commit_message=f"rft dorado: {len(dorado)} ejemplos (hard={n_hard} medio={n_med})")
+    print(f"[GOLD] subido {GOLD_FILE} a HF", flush=True)
 except Exception as e:
     print(f"[GOLD] aviso subida HF: {repr(e)[:160]}", flush=True)
 
 # Meta
-meta = {"problemas": len(dorado), "candidatas_totales": total_cands,
-        "contaminados_descartados": n_contaminados,
+meta = {"ejemplos": len(dorado), "problemas_hard": n_hard, "problemas_medio": n_med,
+        "faciles_descartados": n_easy_drop, "candidatas_totales": total_cands,
+        "contaminados_descartados": n_contaminados, "por_dificultad": dict(por_dif),
         "prm_score_medio": sum(scores) / len(scores),
         "long_media_chars": sum(longs) // len(longs), "por_fuente": dict(por_fuente)}
-json.dump(meta, open(os.path.join(WORK, "rft_dorado_v1_meta.json"), "w"), indent=2)
+json.dump(meta, open(os.path.join(WORK, GOLD_FILE.replace(".jsonl", "_meta.json")), "w"), indent=2)
 print("[GOLD] PASO 2 COMPLETADO", flush=True)

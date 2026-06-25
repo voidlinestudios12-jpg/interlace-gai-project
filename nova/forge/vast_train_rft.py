@@ -50,7 +50,7 @@ def _baja(fn):
     return hf_hub_download(HF_REPO_DATA, fn, repo_type="dataset", token=TOKEN, local_dir=WORK)
 
 
-gold_path = _baja("rft_dorado_v1.jsonl")
+gold_path = _baja(os.environ.get("RFT_GOLD_FILE", "rft_dorado_v1.jsonl"))
 filas = [json.loads(l) for l in open(gold_path, encoding="utf-8") if l.strip()]
 print(f"[RFT] {len(filas)} problemas dorados cargados", flush=True)
 
