@@ -129,7 +129,10 @@ def crear_callback_jsonl(ruta):
 
 def main():
     args = parsear_args()
-    os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
+    # OJO: expandable_segments (que run_benchmark.py pone al importarse) usa la
+    # API VMM de CUDA, rota en WSL2 -> "CUDA driver error: device not ready" en
+    # el backward. Alocador por defecto SIEMPRE para entrenar aquí.
+    os.environ["PYTORCH_CUDA_ALLOC_CONF"] = ""
 
     import torch
     from peft import LoraConfig
@@ -178,6 +181,9 @@ def main():
         save_strategy="steps",
         logging_steps=1,
         report_to="none",
+        # WSL2 + 11 GB: vaciar la cache de CUDA cada paso reduce fragmentación
+        # (el pico del backward con logits (L,152k) roza el límite de VRAM)
+        torch_empty_cache_steps=1,
         dataloader_num_workers=0,  # RAM WSL2 limitada
         # OJO: la clave es `dtype` (transformers 5.x); sin ella carga float32
         model_init_kwargs={"dtype": torch.bfloat16},
