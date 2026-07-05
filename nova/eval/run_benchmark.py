@@ -293,7 +293,14 @@ def _token_hf():
     except Exception:
         pass
     try:
-        from huggingface_hub import HfFolder
+        from huggingface_hub import get_token
+        v = get_token()
+        if v:
+            return v
+    except Exception:
+        pass
+    try:
+        from huggingface_hub import HfFolder  # API antigua (< 1.0)
         v = HfFolder.get_token()
         if v:
             return v

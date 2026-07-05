@@ -32,3 +32,8 @@ docs/benchmarks/fase3_prm/aime_gen.jsonl
 # Privado / interno (no publicar): instrucciones internas y handoffs con nombres de cuentas
 CLAUDE.md
 docs/benchmarks/fase3_prm/ESTADO_Y_RETOMAR.md
+
+# GPQA es gated en HF: el set local de eval NO se publica
+nova/data/gpqa_eval_198.json
+# Resultados crudos de evaluación local (van a HF, no a git)
+results/rl_local/
