@@ -63,6 +63,11 @@ def parsear_args():
     p.add_argument("--optim", default="adamw_bnb_8bit",
                    help="local: adamw_bnb_8bit (11 GB) · nube: adamw_torch "
                         "(con LoRA el ahorro de 8-bit es ~150 MB y bnb es frágil)")
+    p.add_argument("--use-liger", action="store_true",
+                   help="pérdida GRPO chunkeada de liger-kernel: no materializa "
+                        "los logits (L,152k) -> permite cap 8192+ en 24 GB. "
+                        "Compatible con nuestra LoRA (no toca lm_head) y con la "
+                        "corrección IS de vLLM (pasa vllm_is_ratio).")
     return p.parse_args()
 
 
@@ -205,6 +210,7 @@ def main():
         gradient_checkpointing=True,
         gradient_checkpointing_kwargs={"use_reentrant": False},
         optim=args.optim,
+        use_liger_kernel=args.use_liger,
         use_vllm=args.use_vllm,   # local: robusto (False) · nube: colocate
         **vllm_kwargs,
         # --- optimización ---

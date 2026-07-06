@@ -29,7 +29,7 @@ cd interlace-gai-project
 pip install -q --upgrade pip
 # vllm primero fija el torch compatible; el resto se resuelve en la misma pasada
 pip install -q vllm==0.24.0 trl==1.7.0 transformers==5.12.1 peft==0.19.1 \
-  bitsandbytes==0.49.2 accelerate==1.14.0 datasets==5.0.0
+  bitsandbytes==0.49.2 accelerate==1.14.0 datasets==5.0.0 liger-kernel
 
 hf auth login --token "$HF_TOKEN" >/dev/null 2>&1 || hf auth login --token "$HF_TOKEN"
 mkdir -p data/verif results/rl_nube checkpoints
