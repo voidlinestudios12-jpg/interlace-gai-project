@@ -177,6 +177,13 @@ def main():
             vllm_gpu_memory_utilization=args.vllm_mem,
             vllm_max_model_length=768 + args.max_completion,
             vllm_enable_sleep_mode=args.vllm_sleep,
+            # OJO: el modo por defecto (sequence_mask) suma la discrepancia
+            # trainer-vs-vLLM (~0.02 nats/token en bf16) sobre TODA la secuencia:
+            # con miles de tokens el ratio se hunde a e^-100 y multiplica el
+            # gradiente por ~0 -> el modelo no aprende NADA (visto en la 4090,
+            # 29 pasos con grad_norm=0). token_truncate = TIS estándar: ratio
+            # por token ~1, truncado en clip_max.
+            vllm_importance_sampling_mode="token_truncate",
         )
 
     out_dir = str(REPO_ROOT / args.out)
