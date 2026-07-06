@@ -141,8 +141,13 @@ def main():
     args = parsear_args()
     # OJO: expandable_segments (que run_benchmark.py pone al importarse) usa la
     # API VMM de CUDA, rota en WSL2 -> "CUDA driver error: device not ready" en
-    # el backward. Alocador por defecto SIEMPRE para entrenar aquí.
-    os.environ["PYTORCH_CUDA_ALLOC_CONF"] = ""
+    # el backward. En Linux real (nube) sí funciona y reduce la fragmentación
+    # (clave con secuencias de 8K: el pico fp32 de los logits es de ~5 GB).
+    import platform
+    if "microsoft" in platform.uname().release.lower():
+        os.environ["PYTORCH_CUDA_ALLOC_CONF"] = ""  # WSL2: alocador por defecto
+    else:
+        os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 
     import torch
     from peft import LoraConfig

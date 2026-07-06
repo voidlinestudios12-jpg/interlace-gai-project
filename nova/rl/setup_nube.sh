@@ -15,6 +15,12 @@ export DEBIAN_FRONTEND=noninteractive
 
 cd /workspace 2>/dev/null || cd ~
 
+# Las imágenes *-runtime no traen compilador C y Triton (vLLM/torch.compile)
+# compila un módulo al vuelo -> sin gcc revienta con "Failed to find C compiler"
+if ! command -v gcc >/dev/null; then
+  apt-get update -qq >/dev/null && apt-get install -y -qq --no-install-recommends gcc g++ >/dev/null
+fi
+
 if [ ! -d interlace-gai-project ]; then
   git clone "https://${GITHUB_PAT}@github.com/voidlinestudios12-jpg/interlace-gai-project.git"
 fi
