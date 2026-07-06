@@ -60,6 +60,9 @@ def parsear_args():
     p.add_argument("--batch-size", type=int, default=1)
     p.add_argument("--grad-accum", type=int, default=0,
                    help="0 = num_generations/batch_size (1 prompt por paso)")
+    p.add_argument("--optim", default="adamw_bnb_8bit",
+                   help="local: adamw_bnb_8bit (11 GB) · nube: adamw_torch "
+                        "(con LoRA el ahorro de 8-bit es ~150 MB y bnb es frágil)")
     return p.parse_args()
 
 
@@ -194,7 +197,7 @@ def main():
         gradient_accumulation_steps=grad_accum,
         gradient_checkpointing=True,
         gradient_checkpointing_kwargs={"use_reentrant": False},
-        optim="adamw_bnb_8bit",
+        optim=args.optim,
         use_vllm=args.use_vllm,   # local: robusto (False) · nube: colocate
         **vllm_kwargs,
         # --- optimización ---

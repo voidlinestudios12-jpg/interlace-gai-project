@@ -30,9 +30,12 @@ subir_a_hf() {
     --commit-message "piloto GRPO nube: métricas (auto)" >/dev/null 2>&1 || true
 }
 
+# Config validada en 4090 24 GB (2026-07-06): cap 8192 y vllm 0.40 dan OOM;
+# 6144 + vllm 0.20 + adamw_torch caben (pico ~21 GB). bnb 8-bit roto en la
+# caja (libnvJitLink) y además innecesario con LoRA.
 ENTRENA=(python nova/rl/train_grpo.py --max-steps "$PASOS" --save-steps 25
-  --out "$OUT" --log-jsonl "$JSONL"
-  --use-vllm --vllm-mem 0.40 --num-generations 8 --max-completion 8192)
+  --out "$OUT" --log-jsonl "$JSONL" --optim adamw_torch
+  --use-vllm --vllm-mem 0.20 --num-generations 8 --max-completion 6144)
 
 intento=0
 while [ "$intento" -le "$MAX_REINTENTOS" ]; do
