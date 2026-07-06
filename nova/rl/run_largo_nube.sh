@@ -43,9 +43,11 @@ touch "$CENTINELA"
 ) &
 SIDECAR=$!
 
+# vllm-mem 0.18: validado 2026-07-07 en 4090 (0.25 revienta el buffer NCCL
+# de la generación con cap 8192; 0.18 pasa sin workarounds)
 ENTRENA=(python nova/rl/train_grpo.py --max-steps "$PASOS" --save-steps 50
   --out "$OUT" --log-jsonl "$JSONL" --optim adamw_torch --use-liger
-  --use-vllm --vllm-mem 0.25 --num-generations 8 --max-completion 8192)
+  --use-vllm --vllm-mem 0.18 --num-generations 8 --max-completion 8192)
 
 ec=1
 intento=0
