@@ -50,6 +50,16 @@ def parsear_args():
     p.add_argument("--save-steps", type=int, default=50)
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--log-jsonl", default="results/rl_local/grpo_train_log.jsonl")
+    # --- nube (VRAM grande): vLLM colocate + batch configurable ---
+    p.add_argument("--use-vllm", action="store_true",
+                   help="generación con vLLM en modo colocate (nube, 24+ GB)")
+    p.add_argument("--vllm-mem", type=float, default=0.40,
+                   help="fracción de VRAM para vLLM en colocate")
+    p.add_argument("--vllm-sleep", action="store_true",
+                   help="dormir vLLM durante la fase de entrenamiento (más margen)")
+    p.add_argument("--batch-size", type=int, default=1)
+    p.add_argument("--grad-accum", type=int, default=0,
+                   help="0 = num_generations/batch_size (1 prompt por paso)")
     return p.parse_args()
 
 
@@ -151,6 +161,16 @@ def main():
                         "gate_proj", "up_proj", "down_proj"],
     )
 
+    grad_accum = args.grad_accum or max(1, args.num_generations // args.batch_size)
+    vllm_kwargs = {}
+    if args.use_vllm:
+        vllm_kwargs = dict(
+            vllm_mode="colocate",
+            vllm_gpu_memory_utilization=args.vllm_mem,
+            vllm_max_model_length=768 + args.max_completion,
+            vllm_enable_sleep_mode=args.vllm_sleep,
+        )
+
     out_dir = str(REPO_ROOT / args.out)
     config = GRPOConfig(
         output_dir=out_dir,
@@ -164,13 +184,14 @@ def main():
         top_p=0.95,
         beta=args.beta,           # KL que ancla a la base
         # loss_type por defecto ("dapo"): agregación GRPO sin sesgo de longitud
-        # --- memoria (11 GB) ---
-        per_device_train_batch_size=1,
-        gradient_accumulation_steps=args.num_generations,  # 1 prompt por paso
+        # --- memoria ---
+        per_device_train_batch_size=args.batch_size,
+        gradient_accumulation_steps=grad_accum,
         gradient_checkpointing=True,
         gradient_checkpointing_kwargs={"use_reentrant": False},
         optim="adamw_bnb_8bit",
-        use_vllm=False,           # MODO ROBUSTO: una sola copia del modelo
+        use_vllm=args.use_vllm,   # local: robusto (False) · nube: colocate
+        **vllm_kwargs,
         # --- optimización ---
         learning_rate=args.lr,
         warmup_steps=10,
