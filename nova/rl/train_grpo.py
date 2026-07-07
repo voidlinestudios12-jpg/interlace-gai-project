@@ -63,6 +63,10 @@ def parsear_args():
     p.add_argument("--optim", default="adamw_bnb_8bit",
                    help="local: adamw_bnb_8bit (11 GB) · nube: adamw_torch "
                         "(con LoRA el ahorro de 8-bit es ~150 MB y bnb es frágil)")
+    p.add_argument("--temp", type=float, default=1.0,
+                   help="temperatura del grupo. 1.0 = plan original (máx diversidad); "
+                        "0.8 = orden de Alex 2026-07-07 (a 1.0 el modelo divaga y ~50% "
+                        "de las generaciones truncan incluso a cap 8192)")
     p.add_argument("--use-liger", action="store_true",
                    help="pérdida GRPO chunkeada de liger-kernel: no materializa "
                         "los logits (L,152k) -> permite cap 8192+ en 24 GB. "
@@ -200,7 +204,7 @@ def main():
         # --- GRPO ---
         num_generations=args.num_generations,
         max_completion_length=args.max_completion,
-        temperature=1.0,          # diversidad del grupo
+        temperature=args.temp,    # diversidad del grupo vs divagar (ver --temp)
         top_p=0.95,
         beta=args.beta,           # KL que ancla a la base
         # loss_type por defecto ("dapo"): agregación GRPO sin sesgo de longitud
