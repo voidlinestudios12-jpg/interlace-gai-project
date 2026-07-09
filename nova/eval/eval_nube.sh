@@ -12,6 +12,9 @@ ANTIREG="${2:-no}"
 LORA="checkpoints/grpo_v1_largo/final"
 LOG="results/rl_nube/eval_nube.log"
 export HF_HUB_DOWNLOAD_TIMEOUT=30
+# El sampler de flashinfer revienta el warmup del motor con este stack
+# (lección local del día 1; en local lo exporta el entorno conda, aquí no)
+export VLLM_USE_FLASHINFER_SAMPLER=0
 
 cd "$(dirname "$0")/../.."
 mkdir -p results/rl_nube results/rl_local checkpoints
